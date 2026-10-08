@@ -189,6 +189,8 @@ Run `REPO=/path/to/manus-ai-hackathon bash verification/run.sh`. It syncs Partic
   - **`resequenceDay` accepts the converted stops**: drag order honoured, `HH:MM` times assigned, `totalCostEUR` €3.50, `plannedMinutes` 134 including both transfers, exactly one `weather` warning pointing at the outdoor viewpoint, and no false `tight-transfer` warning
   - an empty drag payload cannot drop an imported stop
 
+There is also a standalone preview page that demonstrates the whole chain in a browser without the app: paste → candidates → accepted candidate → `PlanningStop` → `resequenceDay` → a timed day (`09:30–10:00`, `10:12–10:57`, `11:09–11:44`; €3.50 of €40; 134 planned minutes; one `weather` warning on the outdoor viewpoint). Open `docs/handoffs/inspiration-import/preview/index.html`, or rebuild it with `bash docs/handoffs/inspiration-import/preview/build.sh`.
+
 ---
 
 ## 8. Honest limitations

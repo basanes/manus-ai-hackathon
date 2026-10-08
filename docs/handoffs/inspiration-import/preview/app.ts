@@ -1,9 +1,14 @@
 /**
- * Standalone preview harness for src/features/inspiration.ts.
+ * Standalone preview harness for src/features/inspiration.ts (Participant 2).
  *
- * NOT a repo file. It exists so Participant 2 can see the import flow work in a
- * real browser before Participant 5 wires the module into the shared app.
- * It is deliberately dependency-free and reuses the module's real exports.
+ * NOT part of the shipped app. It exists so the team can see the whole chain
+ * working before Participant 5 wires it into the interface:
+ *
+ *   pasted post → candidates → accepted candidate → PlanningStop
+ *               → Participant 1's resequenceDay → timed day + warnings
+ *
+ * It reuses the real module exports and Participant 1's real planner.
+ * Rebuild with: bash docs/handoffs/inspiration-import/preview/build.sh
  */
 
 import {
@@ -14,7 +19,12 @@ import {
   extractDemoCandidates,
   summariseImport,
   type InspirationCandidate,
-} from '../../../src/features/inspiration';
+} from '../../../../src/features/inspiration';
+import { resequenceDay } from '../../../../src/lib/planner';
+import type { PlanningStop } from '../../../../src/lib/contracts';
+
+const DAY_START = '09:30';
+const DAILY_BUDGET_EUR = 40;
 
 const $ = (id: string): HTMLElement => document.getElementById(id) as HTMLElement;
 
@@ -29,7 +39,7 @@ const dayCount = $('day-count');
 
 input.value = DEMO_SOURCE_PLACEHOLDER;
 
-const added: Array<{ day: number; order: number; json: string }> = [];
+const added: PlanningStop[] = [];
 
 function esc(value: string): string {
   return value.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
@@ -37,7 +47,7 @@ function esc(value: string): string {
 
 function chips(c: InspirationCandidate): string {
   const items = [
-    `${c.costEUR === 0 ? 'Free' : `€${c.costEUR.toFixed(2)}`}`,
+    c.costEUR === 0 ? 'Free' : `€${c.costEUR.toFixed(2)}`,
     `${c.durationMinutes} min`,
     c.indoor ? 'Indoor' : 'Outdoor',
     c.weatherRisk ? 'Weather risk' : null,
@@ -45,9 +55,10 @@ function chips(c: InspirationCandidate): string {
   return items.map((t) => `<span class="chip">${esc(t)}</span>`).join('');
 }
 
-function render(): void {
+function renderCandidates(): void {
   const candidates = extractDemoCandidates(input.value);
   const summary = summariseImport(input.value);
+  const alreadyAdded = new Set(added.map((stop) => stop.id));
 
   banner.innerHTML = `
     <span class="dot"></span>
@@ -55,8 +66,9 @@ function render(): void {
     <span class="banner-note">${summary.matchedCount} of ${summary.totalCount} signals matched your paste · no social platform was accessed</span>`;
 
   list.innerHTML = candidates
-    .map(
-      (c) => `
+    .map((c) => {
+      const isAdded = alreadyAdded.has(c.id);
+      return `
     <article class="card">
       <div class="card-head">
         <h3>${esc(c.name)}</h3>
@@ -66,9 +78,11 @@ function render(): void {
       <p class="reason">${esc(c.extractionReason)}</p>
       <p class="note">${esc(c.note)}</p>
       <div class="chips">${chips(c)}</div>
-      <button class="add" data-id="${esc(c.id)}">Add to day 1 · ${DEFAULT_TRANSFER_MINUTES} min transfer</button>
-    </article>`,
-    )
+      <button class="add" data-id="${esc(c.id)}" ${isAdded ? 'disabled' : ''}>${
+        isAdded ? 'Added to day 1 ✓' : `Add to day 1 · ${DEFAULT_TRANSFER_MINUTES} min transfer`
+      }</button>
+    </article>`;
+    })
     .join('');
 
   map.innerHTML = candidates
@@ -79,40 +93,68 @@ function render(): void {
 
   list.querySelectorAll<HTMLButtonElement>('button.add').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const candidate = extractDemoCandidates(input.value).find((c) => c.id === btn.dataset.id);
-      if (!candidate) return;
-      const order = added.length + 1;
-      const stop = candidateToPlanningStop(candidate, 1, order);
-      added.push({ day: 1, order, json: JSON.stringify(stop, null, 2) });
+      const candidate = candidates.find((c) => c.id === btn.dataset.id);
+      if (!candidate || added.some((stop) => stop.id === candidate.id)) return;
+      added.push(candidateToPlanningStop(candidate, 1, added.length + 1));
       renderDay();
-      btn.textContent = `Added as stop ${order} ✓`;
-      btn.disabled = true;
+      renderCandidates();
     });
   });
 }
 
 function renderDay(): void {
   dayCount.textContent = String(added.length);
-  dayPanel.innerHTML = added.length
-    ? added
-        .map(
-          (item) => `
-      <details class="stop">
-        <summary>Stop ${item.order} · day ${item.day} <span class="ok">PlanningStop ✓</span></summary>
-        <pre>${esc(item.json)}</pre>
-      </details>`,
-        )
+
+  if (added.length === 0) {
+    dayPanel.innerHTML =
+      '<p class="empty">Nothing added yet. Accept a candidate above and the module returns a full <code>PlanningStop</code>.</p>';
+    return;
+  }
+
+  // Participant 1's planner runs on the converted stops, exactly as Participant 5 will call it.
+  const day = resequenceDay(added, added.map((stop) => stop.id), DAY_START, DAILY_BUDGET_EUR);
+
+  const schedule = day.stops
+    .map(
+      (stop) => `
+      <li>
+        <span class="time">${esc(stop.startTime ?? '')}–${esc(stop.endTime ?? '')}</span>
+        <span class="stop-name">${esc(stop.title)}</span>
+        <span class="transfer">+${stop.transferFromPreviousMinutes} min transfer</span>
+      </li>`,
+    )
+    .join('');
+
+  const warnings = day.warnings.length
+    ? day.warnings
+        .map((w) => `<li class="warn"><span class="code">${esc(w.code)}</span> ${esc(w.message)}</li>`)
         .join('')
-    : '<p class="empty">Nothing added yet. Accept a candidate above and the module returns a full <code>PlanningStop</code>.</p>';
+    : '<li class="none">No feasibility warnings — this day is clean.</li>';
+
+  const json = added.map((stop, i) => `// stop ${i + 1}\n${JSON.stringify(stop, null, 2)}`).join('\n\n');
+
+  dayPanel.innerHTML = `
+    <div class="summary">
+      <span><strong>${esc(DAY_START)}</strong> start</span>
+      <span><strong>€${day.totalCostEUR.toFixed(2)}</strong> of €${DAILY_BUDGET_EUR.toFixed(2)}</span>
+      <span><strong>${day.plannedMinutes}</strong> planned min</span>
+      <span><strong>${day.warnings.length}</strong> warning${day.warnings.length === 1 ? '' : 's'}</span>
+    </div>
+    <ul class="schedule">${schedule}</ul>
+    <ul class="warnings">${warnings}</ul>
+    <details class="stop">
+      <summary>PlanningStop[] handed to resequenceDay <span class="ok">${added.length} stop${added.length === 1 ? '' : 's'} ✓</span></summary>
+      <pre>${esc(json)}</pre>
+    </details>`;
 }
 
-importBtn.addEventListener('click', render);
+importBtn.addEventListener('click', renderCandidates);
 resetBtn.addEventListener('click', () => {
   input.value = DEMO_SOURCE_PLACEHOLDER;
   added.length = 0;
   renderDay();
-  render();
+  renderCandidates();
 });
 
-render();
+renderCandidates();
 renderDay();

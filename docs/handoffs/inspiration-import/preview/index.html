@@ -84,6 +84,28 @@
       .stop summary { cursor: pointer; font-size: 13px; font-weight: 600; }
       .ok { color: #1d6b45; font-weight: 600; font-size: 12px; }
       .stop pre { margin: 9px 0 2px; padding: 10px; background: #fbf9f6; border-radius: 8px; overflow: auto; font-size: 12px; }
+      .summary {
+        display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 10px 12px; border-radius: 10px;
+        background: #f4f1ec; border: 1px solid #eae4db; font-size: 12.5px; color: #4b453e;
+      }
+      .summary strong { color: var(--ink); }
+      ul.schedule { list-style: none; margin: 12px 0 0; padding: 0; }
+      ul.schedule li {
+        display: flex; align-items: baseline; gap: 10px; padding: 7px 0;
+        border-bottom: 1px dashed var(--line); font-size: 13.5px;
+      }
+      ul.schedule li:last-child { border-bottom: 0; }
+      .time { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--teal); }
+      .stop-name { flex: 1; }
+      .transfer { font-size: 11.5px; color: var(--muted); }
+      ul.warnings { list-style: none; margin: 12px 0 0; padding: 0; }
+      ul.warnings li { padding: 8px 11px; border-radius: 9px; font-size: 12.5px; margin-bottom: 6px; }
+      ul.warnings li.warn { background: #fff6e8; border: 1px solid #f0dcbd; }
+      ul.warnings li.none { background: #e9f4ee; border: 1px solid #cfe6d9; color: #1d6b45; }
+      .code {
+        font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;
+        color: #8a5a2b; margin-right: 6px;
+      }
       .empty { color: var(--muted); font-size: 13px; }
       code { background: #f2eee8; padding: 1px 5px; border-radius: 5px; font-size: 12px; }
     </style>
@@ -93,7 +115,7 @@
       <header>
         <h1>Social inspiration import</h1>
         <p>Paste a saved post → get route-ready Lisbon places. Seeded demo data, no platform access.</p>
-        <span class="tag">Preview harness · Participant 2 module · not the team app</span>
+        <span class="tag">Preview harness · Participant 2 module + Participant 1 planner · not the team app</span>
       </header>
 
       <div class="grid">
@@ -119,13 +141,13 @@
           <div id="list"></div>
         </section>
         <section class="panel">
-          <h2>4 · Planning stops · day 1 (<span id="day-count">0</span>)</h2>
+          <h2>4 · Day 1 sequenced by the planner (<span id="day-count">0</span> stops)</h2>
           <div id="day"></div>
         </section>
       </div>
     </div>
     <script>(() => {
-  // ../src/features/inspiration.ts
+  // ../../../../src/features/inspiration.ts
   var DEMO_IMPORT_DISCLAIMER = "Demo import \u2014 seeded Lisbon signals.";
   var DEFAULT_TRANSFER_MINUTES = 12;
   var FRESH_FIND_NOTE = "Fresh find (demo import)";
@@ -265,7 +287,124 @@
     };
   }
 
+  // ../../../../src/lib/planner.ts
+  var MINUTES_PER_DAY = 24 * 60;
+  var LATE_DAY_CUTOFF_MINUTES = 22 * 60 + 30;
+  var TIGHT_TRANSFER_MINUTES = 12;
+  function resequenceDay(stops, orderedIds, dayStart, dailyBudgetEUR) {
+    const orderedStops = orderStops(stops, orderedIds);
+    const dayStartMinutes = parseClockTime(dayStart);
+    let previousEndMinutes = dayStartMinutes;
+    const replannedStops = orderedStops.map((stop, index) => {
+      const transferMinutes = index === 0 ? 0 : stop.transferFromPreviousMinutes;
+      const startMinutes = previousEndMinutes + transferMinutes;
+      const endMinutes = startMinutes + stop.durationMinutes;
+      previousEndMinutes = endMinutes;
+      return {
+        ...stop,
+        startTime: formatClockTime(startMinutes),
+        endTime: formatClockTime(endMinutes)
+      };
+    });
+    return {
+      stops: replannedStops,
+      totalCostEUR: totalCost(replannedStops),
+      plannedMinutes: previousEndMinutes - dayStartMinutes,
+      warnings: getDayWarnings(replannedStops, dailyBudgetEUR)
+    };
+  }
+  function getDayWarnings(stops, dailyBudgetEUR) {
+    const warnings = [];
+    const cost = totalCost(stops);
+    if (cost > dailyBudgetEUR) {
+      warnings.push({
+        code: "budget",
+        message: `Day total \u20AC${formatCurrency(cost)} exceeds the \u20AC${formatCurrency(dailyBudgetEUR)} budget.`
+      });
+    }
+    stops.forEach((stop, index) => {
+      var _a;
+      if (index > 0 && stop.transferFromPreviousMinutes < TIGHT_TRANSFER_MINUTES) {
+        warnings.push({
+          code: "tight-transfer",
+          stopId: stop.id,
+          message: `${stop.title} allows only ${formatDuration(stop.transferFromPreviousMinutes)} for the transfer.`
+        });
+      }
+      if (stop.isOutdoor && stop.weatherRisk) {
+        warnings.push({
+          code: "weather",
+          stopId: stop.id,
+          message: `${stop.title} is outdoors and may be affected by weather.`
+        });
+      }
+      if (endsAfterLateDayCutoff(stop)) {
+        warnings.push({
+          code: "late-day",
+          stopId: stop.id,
+          message: `${stop.title} ends at ${(_a = stop.endTime) != null ? _a : "an unknown time"}, after the 22:30 cutoff.`
+        });
+      }
+    });
+    return warnings;
+  }
+  function formatDuration(totalMinutes) {
+    const safeMinutes = Math.max(0, Math.round(totalMinutes));
+    const hours = Math.floor(safeMinutes / 60);
+    const minutes = safeMinutes % 60;
+    if (hours === 0) {
+      return `${minutes} min`;
+    }
+    if (minutes === 0) {
+      return `${hours} hr`;
+    }
+    return `${hours} hr ${minutes} min`;
+  }
+  function orderStops(stops, orderedIds) {
+    const stopsById = new Map(stops.map((stop) => [stop.id, stop]));
+    const selectedIds = /* @__PURE__ */ new Set();
+    const selectedStops = [];
+    orderedIds.forEach((id) => {
+      const stop = stopsById.get(id);
+      if (stop && !selectedIds.has(id)) {
+        selectedIds.add(id);
+        selectedStops.push(stop);
+      }
+    });
+    return selectedStops.concat(stops.filter((stop) => !selectedIds.has(stop.id)));
+  }
+  function totalCost(stops) {
+    return roundCurrency(stops.reduce((sum, stop) => sum + stop.costEUR, 0));
+  }
+  function endsAfterLateDayCutoff(stop) {
+    if (!stop.startTime) {
+      return false;
+    }
+    return parseClockTime(stop.startTime) + stop.durationMinutes > LATE_DAY_CUTOFF_MINUTES;
+  }
+  function parseClockTime(value) {
+    const match = /^(?<hours>[01]\d|2[0-3]):(?<minutes>[0-5]\d)$/.exec(value);
+    if (!(match == null ? void 0 : match.groups)) {
+      throw new RangeError(`Expected a 24-hour HH:MM time, received "${value}".`);
+    }
+    return Number(match.groups.hours) * 60 + Number(match.groups.minutes);
+  }
+  function formatClockTime(totalMinutes) {
+    const minutesInDay = (totalMinutes % MINUTES_PER_DAY + MINUTES_PER_DAY) % MINUTES_PER_DAY;
+    const hours = Math.floor(minutesInDay / 60);
+    const minutes = minutesInDay % 60;
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  }
+  function roundCurrency(value) {
+    return Math.round((value + Number.EPSILON) * 100) / 100;
+  }
+  function formatCurrency(value) {
+    return roundCurrency(value).toFixed(2);
+  }
+
   // app.ts
+  var DAY_START = "09:30";
+  var DAILY_BUDGET_EUR = 40;
   var $ = (id) => document.getElementById(id);
   var input = $("source");
   var importBtn = $("import");
@@ -282,22 +421,24 @@
   }
   function chips(c) {
     const items = [
-      `${c.costEUR === 0 ? "Free" : `\u20AC${c.costEUR.toFixed(2)}`}`,
+      c.costEUR === 0 ? "Free" : `\u20AC${c.costEUR.toFixed(2)}`,
       `${c.durationMinutes} min`,
       c.indoor ? "Indoor" : "Outdoor",
       c.weatherRisk ? "Weather risk" : null
     ].filter(Boolean);
     return items.map((t) => `<span class="chip">${esc(t)}</span>`).join("");
   }
-  function render() {
+  function renderCandidates() {
     const candidates = extractDemoCandidates(input.value);
     const summary = summariseImport(input.value);
+    const alreadyAdded = new Set(added.map((stop) => stop.id));
     banner.innerHTML = `
     <span class="dot"></span>
     <strong>${esc(summary.label)}</strong>
     <span class="banner-note">${summary.matchedCount} of ${summary.totalCount} signals matched your paste \xB7 no social platform was accessed</span>`;
-    list.innerHTML = candidates.map(
-      (c) => `
+    list.innerHTML = candidates.map((c) => {
+      const isAdded = alreadyAdded.has(c.id);
+      return `
     <article class="card">
       <div class="card-head">
         <h3>${esc(c.name)}</h3>
@@ -307,43 +448,65 @@
       <p class="reason">${esc(c.extractionReason)}</p>
       <p class="note">${esc(c.note)}</p>
       <div class="chips">${chips(c)}</div>
-      <button class="add" data-id="${esc(c.id)}">Add to day 1 \xB7 ${DEFAULT_TRANSFER_MINUTES} min transfer</button>
-    </article>`
-    ).join("");
+      <button class="add" data-id="${esc(c.id)}" ${isAdded ? "disabled" : ""}>${isAdded ? "Added to day 1 \u2713" : `Add to day 1 \xB7 ${DEFAULT_TRANSFER_MINUTES} min transfer`}</button>
+    </article>`;
+    }).join("");
     map.innerHTML = candidates.map(
       (c) => `<span class="pin" style="left:${c.x}%;top:${c.y}%" title="${esc(c.name)}">${esc(c.name.split(" ")[0])}</span>`
     ).join("");
     list.querySelectorAll("button.add").forEach((btn) => {
       btn.addEventListener("click", () => {
-        const candidate = extractDemoCandidates(input.value).find((c) => c.id === btn.dataset.id);
-        if (!candidate) return;
-        const order = added.length + 1;
-        const stop = candidateToPlanningStop(candidate, 1, order);
-        added.push({ day: 1, order, json: JSON.stringify(stop, null, 2) });
+        const candidate = candidates.find((c) => c.id === btn.dataset.id);
+        if (!candidate || added.some((stop) => stop.id === candidate.id)) return;
+        added.push(candidateToPlanningStop(candidate, 1, added.length + 1));
         renderDay();
-        btn.textContent = `Added as stop ${order} \u2713`;
-        btn.disabled = true;
+        renderCandidates();
       });
     });
   }
   function renderDay() {
     dayCount.textContent = String(added.length);
-    dayPanel.innerHTML = added.length ? added.map(
-      (item) => `
-      <details class="stop">
-        <summary>Stop ${item.order} \xB7 day ${item.day} <span class="ok">PlanningStop \u2713</span></summary>
-        <pre>${esc(item.json)}</pre>
-      </details>`
-    ).join("") : '<p class="empty">Nothing added yet. Accept a candidate above and the module returns a full <code>PlanningStop</code>.</p>';
+    if (added.length === 0) {
+      dayPanel.innerHTML = '<p class="empty">Nothing added yet. Accept a candidate above and the module returns a full <code>PlanningStop</code>.</p>';
+      return;
+    }
+    const day = resequenceDay(added, added.map((stop) => stop.id), DAY_START, DAILY_BUDGET_EUR);
+    const schedule = day.stops.map(
+      (stop) => {
+        var _a, _b;
+        return `
+      <li>
+        <span class="time">${esc((_a = stop.startTime) != null ? _a : "")}\u2013${esc((_b = stop.endTime) != null ? _b : "")}</span>
+        <span class="stop-name">${esc(stop.title)}</span>
+        <span class="transfer">+${stop.transferFromPreviousMinutes} min transfer</span>
+      </li>`;
+      }
+    ).join("");
+    const warnings = day.warnings.length ? day.warnings.map((w) => `<li class="warn"><span class="code">${esc(w.code)}</span> ${esc(w.message)}</li>`).join("") : '<li class="none">No feasibility warnings \u2014 this day is clean.</li>';
+    const json = added.map((stop, i) => `// stop ${i + 1}
+${JSON.stringify(stop, null, 2)}`).join("\n\n");
+    dayPanel.innerHTML = `
+    <div class="summary">
+      <span><strong>${esc(DAY_START)}</strong> start</span>
+      <span><strong>\u20AC${day.totalCostEUR.toFixed(2)}</strong> of \u20AC${DAILY_BUDGET_EUR.toFixed(2)}</span>
+      <span><strong>${day.plannedMinutes}</strong> planned min</span>
+      <span><strong>${day.warnings.length}</strong> warning${day.warnings.length === 1 ? "" : "s"}</span>
+    </div>
+    <ul class="schedule">${schedule}</ul>
+    <ul class="warnings">${warnings}</ul>
+    <details class="stop">
+      <summary>PlanningStop[] handed to resequenceDay <span class="ok">${added.length} stop${added.length === 1 ? "" : "s"} \u2713</span></summary>
+      <pre>${esc(json)}</pre>
+    </details>`;
   }
-  importBtn.addEventListener("click", render);
+  importBtn.addEventListener("click", renderCandidates);
   resetBtn.addEventListener("click", () => {
     input.value = DEMO_SOURCE_PLACEHOLDER;
     added.length = 0;
     renderDay();
-    render();
+    renderCandidates();
   });
-  render();
+  renderCandidates();
   renderDay();
 })();
 </script>

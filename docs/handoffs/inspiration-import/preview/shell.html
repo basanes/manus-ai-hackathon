@@ -84,6 +84,28 @@
       .stop summary { cursor: pointer; font-size: 13px; font-weight: 600; }
       .ok { color: #1d6b45; font-weight: 600; font-size: 12px; }
       .stop pre { margin: 9px 0 2px; padding: 10px; background: #fbf9f6; border-radius: 8px; overflow: auto; font-size: 12px; }
+      .summary {
+        display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 10px 12px; border-radius: 10px;
+        background: #f4f1ec; border: 1px solid #eae4db; font-size: 12.5px; color: #4b453e;
+      }
+      .summary strong { color: var(--ink); }
+      ul.schedule { list-style: none; margin: 12px 0 0; padding: 0; }
+      ul.schedule li {
+        display: flex; align-items: baseline; gap: 10px; padding: 7px 0;
+        border-bottom: 1px dashed var(--line); font-size: 13.5px;
+      }
+      ul.schedule li:last-child { border-bottom: 0; }
+      .time { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--teal); }
+      .stop-name { flex: 1; }
+      .transfer { font-size: 11.5px; color: var(--muted); }
+      ul.warnings { list-style: none; margin: 12px 0 0; padding: 0; }
+      ul.warnings li { padding: 8px 11px; border-radius: 9px; font-size: 12.5px; margin-bottom: 6px; }
+      ul.warnings li.warn { background: #fff6e8; border: 1px solid #f0dcbd; }
+      ul.warnings li.none { background: #e9f4ee; border: 1px solid #cfe6d9; color: #1d6b45; }
+      .code {
+        font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;
+        color: #8a5a2b; margin-right: 6px;
+      }
       .empty { color: var(--muted); font-size: 13px; }
       code { background: #f2eee8; padding: 1px 5px; border-radius: 5px; font-size: 12px; }
     </style>
@@ -93,7 +115,7 @@
       <header>
         <h1>Social inspiration import</h1>
         <p>Paste a saved post → get route-ready Lisbon places. Seeded demo data, no platform access.</p>
-        <span class="tag">Preview harness · Participant 2 module · not the team app</span>
+        <span class="tag">Preview harness · Participant 2 module + Participant 1 planner · not the team app</span>
       </header>
 
       <div class="grid">
@@ -119,7 +141,7 @@
           <div id="list"></div>
         </section>
         <section class="panel">
-          <h2>4 · Planning stops · day 1 (<span id="day-count">0</span>)</h2>
+          <h2>4 · Day 1 sequenced by the planner (<span id="day-count">0</span> stops)</h2>
           <div id="day"></div>
         </section>
       </div>
