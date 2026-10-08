@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Inspiration Import — preview (Participant 2)</title>
+    <style>
+      :root {
+        --ink: #1c1a17;
+        --muted: #6f675e;
+        --line: #e3ddd4;
+        --bg: #faf7f2;
+        --card: #ffffff;
+        --accent: #c8503c;
+        --teal: #1f6f6b;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 28px 20px 60px;
+        background: var(--bg);
+        color: var(--ink);
+        font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+      .wrap { max-width: 1040px; margin: 0 auto; }
+      header h1 { margin: 0 0 4px; font-size: 24px; letter-spacing: -0.01em; }
+      header p { margin: 0; color: var(--muted); font-size: 13.5px; }
+      .tag {
+        display: inline-block; margin-top: 10px; padding: 3px 9px; border-radius: 999px;
+        background: #f0e7dc; color: #8a5a2b; font-size: 12px; font-weight: 600;
+      }
+      .grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 20px; margin-top: 22px; }
+      @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+      .panel {
+        background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px;
+      }
+      .panel h2 { margin: 0 0 10px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+      textarea {
+        width: 100%; min-height: 118px; resize: vertical; padding: 11px 12px;
+        border: 1px solid var(--line); border-radius: 10px; background: #fdfcfa;
+        font: 13.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink);
+      }
+      .row { display: flex; gap: 10px; margin-top: 10px; }
+      button {
+        border: 0; border-radius: 10px; padding: 10px 15px; font-size: 14px; font-weight: 600;
+        cursor: pointer; background: var(--accent); color: #fff;
+      }
+      button.ghost { background: #efe9e0; color: var(--ink); }
+      button.add { width: 100%; margin-top: 12px; background: var(--teal); font-size: 13px; }
+      button.add:disabled { background: #d8d2c8; color: #7b736a; cursor: default; }
+      #banner {
+        display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+        margin: 18px 0 4px; padding: 11px 14px; border-radius: 12px;
+        background: #fff6e8; border: 1px solid #f0dcbd; font-size: 13.5px;
+      }
+      #banner .dot { width: 8px; height: 8px; border-radius: 50%; background: #d68910; flex: none; }
+      #banner-note, .banner-note { color: var(--muted); font-size: 12.5px; }
+      .card { border: 1px solid var(--line); border-radius: 12px; padding: 13px 14px; margin-top: 12px; background: var(--card); }
+      .card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+      .card h3 { margin: 0; font-size: 16px; }
+      .badge { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.04em; }
+      .badge.high { background: #e2f2ea; color: #1d6b45; }
+      .badge.medium { background: #f2ece2; color: #8a7043; }
+      .meta { margin: 3px 0 6px; font-size: 12.5px; color: var(--muted); }
+      .reason { margin: 0 0 6px; font-size: 13px; }
+      .reason::before { content: "↳ "; color: var(--teal); }
+      .note { margin: 0; font-size: 13px; color: #4b453e; }
+      .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+      .chip { font-size: 11.5px; padding: 3px 8px; border-radius: 999px; background: #f4f1ec; color: #5d564e; border: 1px solid #eae4db; }
+      #map {
+        position: relative; height: 210px; border-radius: 12px; border: 1px solid var(--line);
+        background: linear-gradient(180deg, #f7f2ea 0%, #eef3f2 100%); overflow: hidden;
+      }
+      #map::after {
+        content: "schematic Lisbon map · x/y = 0–100"; position: absolute; right: 9px; bottom: 7px;
+        font-size: 10.5px; color: #9a928a;
+      }
+      .pin {
+        position: absolute; transform: translate(-50%, -50%); padding: 3px 8px; border-radius: 999px;
+        background: var(--teal); color: #fff; font-size: 11px; font-weight: 600; white-space: nowrap;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+      }
+      .stop { margin-top: 10px; border: 1px solid var(--line); border-radius: 10px; padding: 8px 11px; }
+      .stop summary { cursor: pointer; font-size: 13px; font-weight: 600; }
+      .ok { color: #1d6b45; font-weight: 600; font-size: 12px; }
+      .stop pre { margin: 9px 0 2px; padding: 10px; background: #fbf9f6; border-radius: 8px; overflow: auto; font-size: 12px; }
+      .empty { color: var(--muted); font-size: 13px; }
+      code { background: #f2eee8; padding: 1px 5px; border-radius: 5px; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>Social inspiration import</h1>
+        <p>Paste a saved post → get route-ready Lisbon places. Seeded demo data, no platform access.</p>
+        <span class="tag">Preview harness · Participant 2 module · not the team app</span>
+      </header>
+
+      <div class="grid">
+        <section class="panel">
+          <h2>1 · Saved post</h2>
+          <textarea id="source" spellcheck="false"></textarea>
+          <div class="row">
+            <button id="import">Import candidates</button>
+            <button id="reset" class="ghost">Reset demo</button>
+          </div>
+        </section>
+        <section class="panel">
+          <h2>2 · Candidates on the map</h2>
+          <div id="map"></div>
+        </section>
+      </div>
+
+      <div id="banner"></div>
+
+      <div class="grid">
+        <section class="panel">
+          <h2>3 · Extracted candidates</h2>
+          <div id="list"></div>
+        </section>
+        <section class="panel">
+          <h2>4 · Planning stops · day 1 (<span id="day-count">0</span>)</h2>
+          <div id="day"></div>
+        </section>
+      </div>
+    </div>
+    <script>/*__BUNDLE__*/</script>
+  </body>
+</html>

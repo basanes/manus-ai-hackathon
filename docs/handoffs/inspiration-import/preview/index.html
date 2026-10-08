@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Inspiration Import — preview (Participant 2)</title>
+    <style>
+      :root {
+        --ink: #1c1a17;
+        --muted: #6f675e;
+        --line: #e3ddd4;
+        --bg: #faf7f2;
+        --card: #ffffff;
+        --accent: #c8503c;
+        --teal: #1f6f6b;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 28px 20px 60px;
+        background: var(--bg);
+        color: var(--ink);
+        font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+      .wrap { max-width: 1040px; margin: 0 auto; }
+      header h1 { margin: 0 0 4px; font-size: 24px; letter-spacing: -0.01em; }
+      header p { margin: 0; color: var(--muted); font-size: 13.5px; }
+      .tag {
+        display: inline-block; margin-top: 10px; padding: 3px 9px; border-radius: 999px;
+        background: #f0e7dc; color: #8a5a2b; font-size: 12px; font-weight: 600;
+      }
+      .grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 20px; margin-top: 22px; }
+      @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+      .panel {
+        background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px;
+      }
+      .panel h2 { margin: 0 0 10px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+      textarea {
+        width: 100%; min-height: 118px; resize: vertical; padding: 11px 12px;
+        border: 1px solid var(--line); border-radius: 10px; background: #fdfcfa;
+        font: 13.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink);
+      }
+      .row { display: flex; gap: 10px; margin-top: 10px; }
+      button {
+        border: 0; border-radius: 10px; padding: 10px 15px; font-size: 14px; font-weight: 600;
+        cursor: pointer; background: var(--accent); color: #fff;
+      }
+      button.ghost { background: #efe9e0; color: var(--ink); }
+      button.add { width: 100%; margin-top: 12px; background: var(--teal); font-size: 13px; }
+      button.add:disabled { background: #d8d2c8; color: #7b736a; cursor: default; }
+      #banner {
+        display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+        margin: 18px 0 4px; padding: 11px 14px; border-radius: 12px;
+        background: #fff6e8; border: 1px solid #f0dcbd; font-size: 13.5px;
+      }
+      #banner .dot { width: 8px; height: 8px; border-radius: 50%; background: #d68910; flex: none; }
+      #banner-note, .banner-note { color: var(--muted); font-size: 12.5px; }
+      .card { border: 1px solid var(--line); border-radius: 12px; padding: 13px 14px; margin-top: 12px; background: var(--card); }
+      .card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+      .card h3 { margin: 0; font-size: 16px; }
+      .badge { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.04em; }
+      .badge.high { background: #e2f2ea; color: #1d6b45; }
+      .badge.medium { background: #f2ece2; color: #8a7043; }
+      .meta { margin: 3px 0 6px; font-size: 12.5px; color: var(--muted); }
+      .reason { margin: 0 0 6px; font-size: 13px; }
+      .reason::before { content: "↳ "; color: var(--teal); }
+      .note { margin: 0; font-size: 13px; color: #4b453e; }
+      .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+      .chip { font-size: 11.5px; padding: 3px 8px; border-radius: 999px; background: #f4f1ec; color: #5d564e; border: 1px solid #eae4db; }
+      #map {
+        position: relative; height: 210px; border-radius: 12px; border: 1px solid var(--line);
+        background: linear-gradient(180deg, #f7f2ea 0%, #eef3f2 100%); overflow: hidden;
+      }
+      #map::after {
+        content: "schematic Lisbon map · x/y = 0–100"; position: absolute; right: 9px; bottom: 7px;
+        font-size: 10.5px; color: #9a928a;
+      }
+      .pin {
+        position: absolute; transform: translate(-50%, -50%); padding: 3px 8px; border-radius: 999px;
+        background: var(--teal); color: #fff; font-size: 11px; font-weight: 600; white-space: nowrap;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+      }
+      .stop { margin-top: 10px; border: 1px solid var(--line); border-radius: 10px; padding: 8px 11px; }
+      .stop summary { cursor: pointer; font-size: 13px; font-weight: 600; }
+      .ok { color: #1d6b45; font-weight: 600; font-size: 12px; }
+      .stop pre { margin: 9px 0 2px; padding: 10px; background: #fbf9f6; border-radius: 8px; overflow: auto; font-size: 12px; }
+      .empty { color: var(--muted); font-size: 13px; }
+      code { background: #f2eee8; padding: 1px 5px; border-radius: 5px; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>Social inspiration import</h1>
+        <p>Paste a saved post → get route-ready Lisbon places. Seeded demo data, no platform access.</p>
+        <span class="tag">Preview harness · Participant 2 module · not the team app</span>
+      </header>
+
+      <div class="grid">
+        <section class="panel">
+          <h2>1 · Saved post</h2>
+          <textarea id="source" spellcheck="false"></textarea>
+          <div class="row">
+            <button id="import">Import candidates</button>
+            <button id="reset" class="ghost">Reset demo</button>
+          </div>
+        </section>
+        <section class="panel">
+          <h2>2 · Candidates on the map</h2>
+          <div id="map"></div>
+        </section>
+      </div>
+
+      <div id="banner"></div>
+
+      <div class="grid">
+        <section class="panel">
+          <h2>3 · Extracted candidates</h2>
+          <div id="list"></div>
+        </section>
+        <section class="panel">
+          <h2>4 · Planning stops · day 1 (<span id="day-count">0</span>)</h2>
+          <div id="day"></div>
+        </section>
+      </div>
+    </div>
+    <script>(() => {
+  // ../src/features/inspiration.ts
+  var DEMO_IMPORT_DISCLAIMER = "Demo import \u2014 seeded Lisbon signals.";
+  var DEFAULT_TRANSFER_MINUTES = 12;
+  var FRESH_FIND_NOTE = "Fresh find (demo import)";
+  var DEMO_SOURCE_PLACEHOLDER = 'Saved reel: "24h in Lisbon \u2014 past\xE9is de nata at F\xE1brica da Nata, then LX Factory and a sunset miradouro in Alc\xE2ntara \u{1F305} #lisbon #food"';
+  var DEMO_SOURCE_LABEL = "Demo Reel \xB7 @lisbonbites";
+  var SEEDS = [
+    {
+      id: "demo-lisbon-fabrica-da-nata",
+      name: "F\xE1brica da Nata",
+      category: "food",
+      sourceLabel: DEMO_SOURCE_LABEL,
+      extractionReason: "Named in caption + food tag",
+      confidence: "high",
+      costEUR: 3.5,
+      durationMinutes: 30,
+      indoor: true,
+      weatherRisk: false,
+      note: "Pastel de nata counter on Rua Augusta in the Baixa. Cheap, quick, and easy to slot in or drop when the day runs late.",
+      x: 62,
+      y: 42,
+      latitude: 38.7107,
+      longitude: -9.137,
+      triggers: ["nata", "pastel", "pasteis", "custard", "fabrica", "santa justa", "baixa"],
+      defaultReason: "Named in caption (\u201Cpast\xE9is de nata\u201D) + food tag"
+    },
+    {
+      id: "demo-lisbon-ler-devagar",
+      name: "Ler Devagar",
+      category: "culture",
+      sourceLabel: DEMO_SOURCE_LABEL,
+      extractionReason: "Place tag + culture tag",
+      confidence: "high",
+      costEUR: 0,
+      durationMinutes: 45,
+      indoor: true,
+      weatherRisk: false,
+      note: "Bookshop inside LX Factory, steps from the Alc\xE2ntara waterfront. Fully indoor, so it works as the rainy-hour swap.",
+      x: 18,
+      y: 60,
+      latitude: 38.7037,
+      longitude: -9.1786,
+      triggers: ["ler devagar", "lx factory", "livraria", "bookshop", "bookstore", "book", "library"],
+      defaultReason: "Place tag \u201CLX Factory\u201D + culture tag"
+    },
+    {
+      id: "demo-lisbon-alcantara-viewpoint",
+      name: "Alc\xE2ntara viewpoint",
+      category: "viewpoint",
+      sourceLabel: DEMO_SOURCE_LABEL,
+      extractionReason: "Golden-hour cue in caption + viewpoint tag",
+      confidence: "high",
+      costEUR: 0,
+      durationMinutes: 35,
+      indoor: false,
+      weatherRisk: true,
+      note: "Golden-hour views over the 25 de Abril bridge from Rocha do Conde de \xD3bidos. Free, but skip it in rain or high wind.",
+      x: 9,
+      y: 50,
+      latitude: 38.7047,
+      longitude: -9.1705,
+      triggers: ["alcantara", "miradouro", "viewpoint", "view point", "sunset", "golden hour", "ponte", "bridge"],
+      defaultReason: "Golden-hour cue (\u201Csunset miradouro\u201D) + viewpoint tag"
+    }
+  ];
+  function normalise(text) {
+    return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+  }
+  function matchedTriggers(normalised) {
+    return SEEDS.map((seed) => seed.triggers.filter((trigger) => normalised.includes(trigger)));
+  }
+  function isDefaultReel(normalised, matches) {
+    const isLisbon = normalised.includes("lisbon") || normalised.includes("lisboa") || normalised.includes("lisbonbites");
+    return isLisbon && matches.filter((m) => m.length > 0).length >= 2;
+  }
+  function extractDemoCandidates(sourceText) {
+    const text = normalise(sourceText != null ? sourceText : "");
+    const matches = matchedTriggers(text);
+    const isDefault = isDefaultReel(text, matches);
+    return SEEDS.map((seed, index) => {
+      const matchedTrigger = matches[index][0];
+      let confidence;
+      let extractionReason;
+      if (isDefault && matchedTrigger) {
+        confidence = "high";
+        extractionReason = seed.defaultReason;
+      } else if (matchedTrigger) {
+        confidence = "high";
+        extractionReason = `Matched \u201C${matchedTrigger}\u201D in your paste \xB7 seeded demo rule`;
+      } else {
+        confidence = "medium";
+        extractionReason = text.length === 0 ? "Nothing pasted yet \xB7 seeded demo candidate" : "No match in your paste \xB7 seeded demo candidate";
+      }
+      return {
+        id: seed.id,
+        name: seed.name,
+        category: seed.category,
+        sourceLabel: seed.sourceLabel,
+        extractionReason,
+        confidence,
+        costEUR: seed.costEUR,
+        durationMinutes: seed.durationMinutes,
+        indoor: seed.indoor,
+        weatherRisk: seed.weatherRisk,
+        note: seed.note,
+        x: seed.x,
+        y: seed.y,
+        latitude: seed.latitude,
+        longitude: seed.longitude
+      };
+    });
+  }
+  function summariseImport(sourceText) {
+    const candidates = extractDemoCandidates(sourceText);
+    const matchedCount = candidates.filter((c) => c.confidence === "high").length;
+    return {
+      label: DEMO_IMPORT_DISCLAIMER,
+      matchedCount,
+      totalCount: candidates.length,
+      allMatched: matchedCount === candidates.length
+    };
+  }
+  function candidateToPlanningStop(candidate, day, order) {
+    var _a;
+    void day;
+    void order;
+    return {
+      id: candidate.id,
+      title: candidate.name,
+      description: `${FRESH_FIND_NOTE}: ${candidate.note}`,
+      latitude: candidate.latitude,
+      longitude: candidate.longitude,
+      durationMinutes: candidate.durationMinutes,
+      transferFromPreviousMinutes: DEFAULT_TRANSFER_MINUTES,
+      costEUR: candidate.costEUR,
+      isOutdoor: !candidate.indoor,
+      weatherRisk: (_a = candidate.weatherRisk) != null ? _a : false
+    };
+  }
+
+  // app.ts
+  var $ = (id) => document.getElementById(id);
+  var input = $("source");
+  var importBtn = $("import");
+  var resetBtn = $("reset");
+  var banner = $("banner");
+  var list = $("list");
+  var map = $("map");
+  var dayPanel = $("day");
+  var dayCount = $("day-count");
+  input.value = DEMO_SOURCE_PLACEHOLDER;
+  var added = [];
+  function esc(value) {
+    return value.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  }
+  function chips(c) {
+    const items = [
+      `${c.costEUR === 0 ? "Free" : `\u20AC${c.costEUR.toFixed(2)}`}`,
+      `${c.durationMinutes} min`,
+      c.indoor ? "Indoor" : "Outdoor",
+      c.weatherRisk ? "Weather risk" : null
+    ].filter(Boolean);
+    return items.map((t) => `<span class="chip">${esc(t)}</span>`).join("");
+  }
+  function render() {
+    const candidates = extractDemoCandidates(input.value);
+    const summary = summariseImport(input.value);
+    banner.innerHTML = `
+    <span class="dot"></span>
+    <strong>${esc(summary.label)}</strong>
+    <span class="banner-note">${summary.matchedCount} of ${summary.totalCount} signals matched your paste \xB7 no social platform was accessed</span>`;
+    list.innerHTML = candidates.map(
+      (c) => `
+    <article class="card">
+      <div class="card-head">
+        <h3>${esc(c.name)}</h3>
+        <span class="badge ${c.confidence}">${c.confidence}</span>
+      </div>
+      <p class="meta">${esc(c.sourceLabel)} \xB7 ${esc(c.category)}</p>
+      <p class="reason">${esc(c.extractionReason)}</p>
+      <p class="note">${esc(c.note)}</p>
+      <div class="chips">${chips(c)}</div>
+      <button class="add" data-id="${esc(c.id)}">Add to day 1 \xB7 ${DEFAULT_TRANSFER_MINUTES} min transfer</button>
+    </article>`
+    ).join("");
+    map.innerHTML = candidates.map(
+      (c) => `<span class="pin" style="left:${c.x}%;top:${c.y}%" title="${esc(c.name)}">${esc(c.name.split(" ")[0])}</span>`
+    ).join("");
+    list.querySelectorAll("button.add").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const candidate = extractDemoCandidates(input.value).find((c) => c.id === btn.dataset.id);
+        if (!candidate) return;
+        const order = added.length + 1;
+        const stop = candidateToPlanningStop(candidate, 1, order);
+        added.push({ day: 1, order, json: JSON.stringify(stop, null, 2) });
+        renderDay();
+        btn.textContent = `Added as stop ${order} \u2713`;
+        btn.disabled = true;
+      });
+    });
+  }
+  function renderDay() {
+    dayCount.textContent = String(added.length);
+    dayPanel.innerHTML = added.length ? added.map(
+      (item) => `
+      <details class="stop">
+        <summary>Stop ${item.order} \xB7 day ${item.day} <span class="ok">PlanningStop \u2713</span></summary>
+        <pre>${esc(item.json)}</pre>
+      </details>`
+    ).join("") : '<p class="empty">Nothing added yet. Accept a candidate above and the module returns a full <code>PlanningStop</code>.</p>';
+  }
+  importBtn.addEventListener("click", render);
+  resetBtn.addEventListener("click", () => {
+    input.value = DEMO_SOURCE_PLACEHOLDER;
+    added.length = 0;
+    renderDay();
+    render();
+  });
+  render();
+  renderDay();
+})();
+</script>
+  </body>
+</html>
